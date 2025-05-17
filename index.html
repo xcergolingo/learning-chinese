@@ -5,17 +5,46 @@
   <title>Chinese Character Writing Practice</title>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@2.2.2/dist/hanzi-writer.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    #writer { width: 300px; height: 300px; margin: 0 auto; }
-    canvas { border: 2px solid #333; background: #fff; margin-top: 10px; cursor: crosshair; }
-    button { margin: 10px 5px; padding: 10px 20px; font-size: 16px; }
-    #pinyin, #meaning { font-size: 20px; margin: 5px 0; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #writer-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .char-writer {
+      width: 150px;
+      height: 150px;
+      border: 1px solid #ccc;
+      position: relative;
+    }
+    canvas {
+      border: 2px solid #333;
+      background: #fff;
+      margin-top: 10px;
+      cursor: crosshair;
+    }
+    button {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #pinyin, #meaning {
+      font-size: 20px;
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
 
   <h1>Chinese Character Writing Practice</h1>
-  <div id="writer"></div>
+
+  <div id="writer-container"></div>
   <div id="pinyin"></div>
   <div id="meaning"></div>
 
@@ -26,7 +55,9 @@
   <button onclick="nextCharacter()">Next Character</button>
 
   <script>
-    const characters = [
+    // 1) Keep your full built-in list here
+    const defaultCharacters = [
+	  { char: '你好', pinyin: 'nǐ hǎo', meaning: 'how do you do' },
       { char: '你', pinyin: 'nǐ', meaning: 'you' },
       { char: '好', pinyin: 'hǎo', meaning: 'good' },
       { char: '学', pinyin: 'xué', meaning: 'to study' },
@@ -34,63 +65,93 @@
       { char: '汉', pinyin: 'hàn', meaning: 'Han (Chinese)' },
       { char: '字', pinyin: 'zì', meaning: 'character' },
       { char: '谢', pinyin: 'xiè', meaning: 'thank' },
-      { char: '我', pinyin: 'wǒ', meaning: 'I/​me' },
+      { char: '我', pinyin: 'wǒ', meaning: 'I/me' },
       { char: '们', pinyin: 'men', meaning: 'plural marker' },
       { char: '是', pinyin: 'shì', meaning: 'to be' }
     ];
 
-    let currentIndex = 0;
-    let writer = null;
+    // 2) Start with default array
+    let characters = defaultCharacters.slice();
+    let isOverride = false;
 
-    function loadCharacter(charData) {
-      // 1) Clear previous SVG
-      const container = document.getElementById('writer');
+    // 3) Check for ?chars= override
+    const params = new URLSearchParams(window.location.search);
+    const override = params.get('chars');
+    if (override) {
+      characters = [{ char: override, pinyin: '', meaning: '' }];
+      isOverride = true;
+    }
+
+    let currentIndex = 0;
+    let writers = [];
+
+    function loadCharacter(data) {
+      // Clear out old writers
+      writers = [];
+      const container = document.getElementById('writer-container');
       container.innerHTML = '';
 
-      // 2) Create new HanziWriter instance
-      writer = HanziWriter.create('writer', charData.char, {
-        width: 300,
-        height: 300,
-        padding: 5,
-        showCharacter: false,
-        showOutline: true,
-        strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 100
+      // For each codepoint, create a small writer box
+      Array.from(data.char).forEach((ch, i) => {
+        const div = document.createElement('div');
+        div.id = `writer-${i}`;
+        div.className = 'char-writer';
+        container.appendChild(div);
+        const w = HanziWriter.create(div.id, ch, {
+          width: 150,
+          height: 150,
+          padding: 5,
+          showCharacter: false,
+          showOutline: true,
+          strokeAnimationSpeed: 1,
+          delayBetweenStrokes: 100
+        });
+        writers.push(w);
       });
 
-      // 3) Update pinyin/meaning
-      document.getElementById('pinyin').textContent = 'Pinyin: ' + charData.pinyin;
-      document.getElementById('meaning').textContent = 'Meaning: ' + charData.meaning;
+      // Update pinyin/meaning
+      document.getElementById('pinyin').textContent =
+        data.pinyin ? 'Pinyin: ' + data.pinyin : '';
+      document.getElementById('meaning').textContent =
+        data.meaning ? 'Meaning: ' + data.meaning : '';
     }
 
     function playAnimation() {
-      if (writer) writer.animateCharacter();
+      writers.forEach(w => w.animateCharacter());
     }
+
+    function nextCharacter() {
+      // If we’re in override mode, drop it and go to the default list
+      if (isOverride) {
+        isOverride = false;
+        characters = defaultCharacters.slice();
+        currentIndex = 0;
+      } else {
+        currentIndex = (currentIndex + 1) % characters.length;
+      }
+      clearCanvas();
+      loadCharacter(characters[currentIndex]);
+    }
+
+    // --- Canvas drawing code (unchanged) ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
 
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
     }
-
-    function nextCharacter() {
-      currentIndex = (currentIndex + 1) % characters.length;
-      clearCanvas();
-      loadCharacter(characters[currentIndex]);
-    }
-
-    // --- Canvas drawing setup ---
-    const canvas = document.getElementById('canvas');
-    const ctx    = canvas.getContext('2d');
-    let   drawing = false;
+    clearCanvas();
 
     canvas.addEventListener('mousedown', () => drawing = true);
-    canvas.addEventListener('mouseup',   () => { drawing = false; ctx.beginPath(); });
-    canvas.addEventListener('mouseout',  () => { drawing = false; ctx.beginPath(); });
+    canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+    canvas.addEventListener('mouseout', () => { drawing = false; ctx.beginPath(); });
     canvas.addEventListener('mousemove', e => {
       if (!drawing) return;
       const r = canvas.getBoundingClientRect();
       ctx.lineWidth = 3;
-      ctx.lineCap   = 'round';
+      ctx.lineCap = 'round';
       ctx.strokeStyle = '#000';
       ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
       ctx.stroke();
@@ -116,9 +177,9 @@
     });
     canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
 
-    // Initialize
+    // Initialize first character
     loadCharacter(characters[currentIndex]);
-  </script>
 
+  </script>
 </body>
 </html>
