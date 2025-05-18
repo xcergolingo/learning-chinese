@@ -22,6 +22,7 @@
       height: 150px;
       border: 1px solid #ccc;
       position: relative;
+      cursor: pointer;        /* make it clear you can tap/click */
     }
     canvas {
       border: 2px solid #333;
@@ -55,9 +56,10 @@
   <button onclick="nextCharacter()">Next Character</button>
 
   <script>
-    // 1) Keep your full built-in list here
+    // 1) Full built-in list
     const defaultCharacters = [
-	  { char: '你好', pinyin: 'nǐ hǎo', meaning: 'how do you do' },
+      { char: '我们是光', pinyin: 'wǒ men shì guāng', meaning: 'we are light' },
+      { char: '你好', pinyin: 'nǐ hǎo', meaning: 'how do you do' },
       { char: '你', pinyin: 'nǐ', meaning: 'you' },
       { char: '好', pinyin: 'hǎo', meaning: 'good' },
       { char: '学', pinyin: 'xué', meaning: 'to study' },
@@ -74,7 +76,7 @@
     let characters = defaultCharacters.slice();
     let isOverride = false;
 
-    // 3) Check for ?chars= override
+    // 3) URL override
     const params = new URLSearchParams(window.location.search);
     const override = params.get('chars');
     if (override) {
@@ -91,12 +93,14 @@
       const container = document.getElementById('writer-container');
       container.innerHTML = '';
 
-      // For each codepoint, create a small writer box
+      // For each codepoint in the string
       Array.from(data.char).forEach((ch, i) => {
         const div = document.createElement('div');
         div.id = `writer-${i}`;
         div.className = 'char-writer';
         container.appendChild(div);
+
+        // Create a HanziWriter for this single character
         const w = HanziWriter.create(div.id, ch, {
           width: 150,
           height: 150,
@@ -106,6 +110,12 @@
           strokeAnimationSpeed: 1,
           delayBetweenStrokes: 100
         });
+
+        // When this box is clicked or tapped, animate only this character
+        div.addEventListener('click', () => {
+          w.animateCharacter();
+        });
+
         writers.push(w);
       });
 
@@ -117,11 +127,12 @@
     }
 
     function playAnimation() {
+      // Animate all characters
       writers.forEach(w => w.animateCharacter());
     }
 
     function nextCharacter() {
-      // If we’re in override mode, drop it and go to the default list
+      // If override was used, revert to default list on next
       if (isOverride) {
         isOverride = false;
         characters = defaultCharacters.slice();
@@ -177,9 +188,8 @@
     });
     canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
 
-    // Initialize first character
+    // Initialize the very first character set
     loadCharacter(characters[currentIndex]);
-
   </script>
 </body>
 </html>
