@@ -13,7 +13,6 @@
       --text: #1f1f1f;
       --border: #d7d7dd;
       --accent: #2563eb;
-      --accent-light: #e0ecff;
     }
 
     * {
@@ -45,7 +44,7 @@
 
     h1 {
       font-size: clamp(1.4rem, 3.4vw, 2rem);
-      margin: 0 0 4px;
+      margin: 0;
       text-align: center;
       color: #0f172a;
     }
@@ -85,7 +84,7 @@
 
     #draw-panel {
       position: relative;
-      width: min(280px, 80vw);
+      width: clamp(240px, 70vw, 320px);
       aspect-ratio: 1 / 1;
       margin: 0 auto;
       border-radius: 20px;
@@ -100,6 +99,10 @@
       inset: 0;
       width: 100%;
       height: 100%;
+    }
+
+    #stroke-container {
+      pointer-events: none;
     }
 
     #draw-canvas {
@@ -131,32 +134,14 @@
       box-shadow: 0 6px 12px -8px rgba(37, 99, 235, 0.7);
     }
 
-    button:nth-child(2) {
-      background: #475569;
-    }
-    button:nth-child(3) {
-      background: #dc2626;
-    }
+    button:nth-child(2) { background: #475569; }
+    button:nth-child(3) { background: #dc2626; }
 
     @media (max-width: 480px) {
-      .app-shell {
-        border-radius: 14px;
-        padding: 14px;
-        gap: 14px;
-      }
-
-      .info-panel {
-        font-size: 0.9rem;
-        min-height: 32px;
-      }
-
-      #draw-panel {
-        width: min(250px, 85vw);
-      }
-
-      .controls {
-        grid-template-columns: 1fr;
-      }
+      .app-shell { border-radius: 14px; padding: 14px; gap: 14px; }
+      .info-panel { font-size: 0.9rem; min-height: 32px; }
+      #draw-panel { width: clamp(220px, 78vw, 280px); }
+      .controls { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -173,7 +158,7 @@
 
     <div id="draw-panel">
       <div id="stroke-container"></div>
-      <canvas id="draw-canvas" width="300" height="300"></canvas>
+      <canvas id="draw-canvas"></canvas>
     </div>
 
     <div class="controls">
@@ -207,6 +192,18 @@
 
     let smallWriters = [];
     let panelWriter  = null;
+
+    function getPanelSize() {
+      const panel = document.getElementById('draw-panel');
+      return panel.clientWidth || 300;
+    }
+
+    function syncCanvasToPanel() {
+      const size = getPanelSize();
+      drawCanvas.width = size;
+      drawCanvas.height = size;
+      drawCtx.beginPath();
+    }
 
     function loadSmallBoxes(data) {
       smallWriters = [];
@@ -248,9 +245,13 @@
         document.getElementById('meaning').textContent = `Meaning: ${info.meaning}`;
       }
 
+      const panelSize = getPanelSize();
       panelWriter = HanziWriter.create('stroke-container', ch, {
-        width: 300, height: 300, padding: 20,
-        showCharacter: false, showOutline: true,
+        width: panelSize,
+        height: panelSize,
+        padding: Math.max(16, panelSize * 0.07),
+        showCharacter: false,
+        showOutline: true,
         strokeColor: '#aaa',
         strokeAnimationSpeed: 2,
         delayBetweenStrokes: 300
@@ -305,6 +306,9 @@
     ['mouseup','mouseout','touchend','touchcancel'].forEach(evt=>
       drawCanvas.addEventListener(evt, up));
 
+    window.addEventListener('resize', syncCanvasToPanel);
+
+    syncCanvasToPanel();
     loadSmallBoxes(rootData);
   </script>
 </body>
