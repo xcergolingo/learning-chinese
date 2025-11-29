@@ -139,13 +139,7 @@
       width: fit-content;
       padding: 7px 18px;
       box-shadow: none;
-    }
-
-    #show-pinyin-btn:disabled {
-      background: #cbd5f5;
-      color: #94a3b8;
-      cursor: not-allowed;
-      box-shadow: none;
+      display: none;
     }
 
     @media (max-width: 480px) {
@@ -217,10 +211,9 @@
       document.getElementById('pinyin').textContent = '';
       const btn = document.getElementById('show-pinyin-btn');
       if (!text) {
-        btn.disabled = true;
-        btn.textContent = 'No Pinyin';
+        btn.style.display = 'none';
       } else {
-        btn.disabled = false;
+        btn.style.display = 'inline-flex';
         btn.textContent = 'Show Pinyin';
       }
     }
@@ -339,9 +332,7 @@
       drawCtx.beginPath();
       drawCtx.moveTo(x,y);
     }
-    function up() {
-      drawing = false;
-    }
+    function up() { drawing = false; }
 
     ['mousedown','touchstart'].forEach(evt=>
       drawCanvas.addEventListener(evt, down));
