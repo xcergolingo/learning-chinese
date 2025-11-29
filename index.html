@@ -146,6 +146,12 @@
       .app-shell { border-radius: 14px; padding: 14px; gap: 14px; }
       .info-panel { font-size: 0.9rem; min-height: 32px; }
       #draw-panel { width: clamp(220px, 78vw, 280px); }
+      #writer-container { gap: 4px; }
+      .char-writer {
+        width: clamp(24px, 8vw, 34px);
+        height: clamp(24px, 8vw, 34px);
+        border-radius: 5px;
+      }
       .controls { grid-template-columns: 1fr; }
     }
   </style>
@@ -251,7 +257,7 @@
         cont.appendChild(box);
 
         const w = HanziWriter.create(box.id, ch, {
-          width: 40, height: 40, padding: 2,
+          width: 34, height: 34, padding: 1.5,
           showCharacter: true, showOutline: true,
           strokeAnimationSpeed: 1, delayBetweenStrokes: 100
         });
