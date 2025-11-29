@@ -196,17 +196,20 @@
       { char: '是',        pinyin: 'shì',              meaning: 'to be' }
     ];
 
-    const params   = new URLSearchParams(window.location.search);
-    const override = params.get('chars');
-    const rootData  = override
-      ? { char: override, pinyin: '', meaning: '' }
-      : defaultCharacters[0];
+    const params         = new URLSearchParams(window.location.search);
+    const overrideChars  = params.get('chars');
+    const overridePinyin = params.get('pinyin') || '';
+    const overrideMean   = params.get('meaning') || '';
+
+    const rootData = overrideChars
+      ? { char: overrideChars, pinyin: overridePinyin, meaning: overrideMean }
+      : { ...defaultCharacters[0] };
 
     let smallWriters = [];
     let panelWriter  = null;
-
     let currentPinyinText = '';
     let pinyinVisible = false;
+    let activeMeta = { ...rootData };
 
     function updatePinyin(text) {
       currentPinyinText = text;
@@ -244,6 +247,7 @@
     }
 
     function loadSmallBoxes(data) {
+      activeMeta = { ...data };
       smallWriters = [];
       const cont = document.getElementById('writer-container');
       cont.innerHTML = '';
@@ -278,13 +282,12 @@
       clearPanel();
 
       const info = defaultCharacters.find(e=>e.char===ch);
-      if(info) {
-        document.getElementById('meaning').textContent = `Meaning: ${info.meaning}`;
-        updatePinyin(info.pinyin ? `Pinyin: ${info.pinyin}` : '');
-      } else {
-        document.getElementById('meaning').textContent = '';
-        updatePinyin('');
-      }
+      const meta = info ? info : activeMeta;
+
+      document.getElementById('meaning').textContent =
+        meta.meaning ? `Meaning: ${meta.meaning}` : '';
+
+      updatePinyin(meta.pinyin ? `Pinyin: ${meta.pinyin}` : '');
 
       const panelSize = getPanelSize();
       panelWriter = HanziWriter.create('stroke-container', ch, {
