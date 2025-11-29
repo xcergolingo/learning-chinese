@@ -13,11 +13,10 @@
       --text: #1f1f1f;
       --border: #d7d7dd;
       --accent: #2563eb;
+      --muted: #475569;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -53,8 +52,12 @@
       text-align: center;
       line-height: 1.4;
       font-size: 0.95rem;
-      color: #475569;
+      color: var(--muted);
       min-height: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
     }
 
     #writer-container {
@@ -101,14 +104,8 @@
       height: 100%;
     }
 
-    #stroke-container {
-      pointer-events: none;
-    }
-
-    #draw-canvas {
-      z-index: 1;
-      touch-action: none;
-    }
+    #stroke-container { pointer-events: none; }
+    #draw-canvas { z-index: 1; touch-action: none; }
 
     .controls {
       display: grid;
@@ -137,6 +134,20 @@
     button:nth-child(2) { background: #475569; }
     button:nth-child(3) { background: #dc2626; }
 
+    #show-pinyin-btn {
+      background: #0ea5e9;
+      width: fit-content;
+      padding: 7px 18px;
+      box-shadow: none;
+    }
+
+    #show-pinyin-btn:disabled {
+      background: #cbd5f5;
+      color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
     @media (max-width: 480px) {
       .app-shell { border-radius: 14px; padding: 14px; gap: 14px; }
       .info-panel { font-size: 0.9rem; min-height: 32px; }
@@ -152,8 +163,9 @@
     <div id="writer-container"></div>
 
     <div class="info-panel">
-      <div id="pinyin"></div>
       <div id="meaning"></div>
+      <div id="pinyin"></div>
+      <button id="show-pinyin-btn" onclick="togglePinyin()">Show Pinyin</button>
     </div>
 
     <div id="draw-panel">
@@ -193,6 +205,32 @@
     let smallWriters = [];
     let panelWriter  = null;
 
+    let currentPinyinText = '';
+    let pinyinVisible = false;
+
+    function updatePinyin(text) {
+      currentPinyinText = text;
+      pinyinVisible = false;
+      document.getElementById('pinyin').textContent = '';
+      const btn = document.getElementById('show-pinyin-btn');
+      if (!text) {
+        btn.disabled = true;
+        btn.textContent = 'No Pinyin';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Show Pinyin';
+      }
+    }
+
+    function togglePinyin() {
+      if (!currentPinyinText) return;
+      const pinyinEl = document.getElementById('pinyin');
+      pinyinVisible = !pinyinVisible;
+      pinyinEl.textContent = pinyinVisible ? currentPinyinText : '';
+      document.getElementById('show-pinyin-btn').textContent =
+        pinyinVisible ? 'Hide Pinyin' : 'Show Pinyin';
+    }
+
     function getPanelSize() {
       const panel = document.getElementById('draw-panel');
       return panel.clientWidth || 300;
@@ -226,10 +264,10 @@
         smallWriters.push(w);
       });
 
-      document.getElementById('pinyin').textContent =
-        data.pinyin ? `Pinyin: ${data.pinyin}` : '';
       document.getElementById('meaning').textContent =
         data.meaning ? `Meaning: ${data.meaning}` : '';
+
+      updatePinyin(data.pinyin ? `Pinyin: ${data.pinyin}` : '');
     }
 
     function playAllSmall() {
@@ -241,8 +279,11 @@
 
       const info = defaultCharacters.find(e=>e.char===ch);
       if(info) {
-        document.getElementById('pinyin').textContent = `Pinyin: ${info.pinyin}`;
         document.getElementById('meaning').textContent = `Meaning: ${info.meaning}`;
+        updatePinyin(info.pinyin ? `Pinyin: ${info.pinyin}` : '');
+      } else {
+        document.getElementById('meaning').textContent = '';
+        updatePinyin('');
       }
 
       const panelSize = getPanelSize();
