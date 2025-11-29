@@ -64,7 +64,7 @@
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       padding: 10px;
       border-radius: 14px;
       background: #f1f5f9;
@@ -72,9 +72,9 @@
     }
 
     .char-writer {
-      width: clamp(56px, 16vw, 78px);
-      height: clamp(56px, 16vw, 78px);
-      border-radius: 10px;
+      width: clamp(38px, 12vw, 55px);
+      height: clamp(38px, 12vw, 55px);
+      border-radius: 8px;
       border: 1px solid #dbeafe;
       background: #fff;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -82,7 +82,7 @@
 
     .char-writer:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 16px -10px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 6px 12px -10px rgba(37, 99, 235, 0.35);
     }
 
     #draw-panel {
@@ -251,7 +251,7 @@
         cont.appendChild(box);
 
         const w = HanziWriter.create(box.id, ch, {
-          width: 70, height: 70, padding: 4,
+          width: 48, height: 48, padding: 3,
           showCharacter: true, showOutline: true,
           strokeAnimationSpeed: 1, delayBetweenStrokes: 100
         });
