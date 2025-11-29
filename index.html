@@ -1,217 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chinese Character Writing Practice</title>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@2.2.2/dist/hanzi-writer.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f7f9;
+      --card: #ffffff;
+      --text: #1f1f1f;
+      --border: #d7d7dd;
+      --accent: #2563eb;
+      --accent-light: #e0ecff;
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: clamp(16px, 4vw, 32px);
+    }
+
+    .app-shell {
+      width: min(900px, 100%);
+      background: var(--card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 25px 60px -30px rgba(15, 23, 42, 0.2);
+      padding: clamp(20px, 4vw, 40px);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      margin: 0;
+      text-align: center;
+      color: #0f172a;
+      letter-spacing: -0.01em;
+    }
+
+    .info-panel {
+      text-align: center;
+      line-height: 1.6;
+      font-size: 1rem;
+      color: #475569;
+    }
+
     #writer-container {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 16px;
+      background: #f1f5f9;
+      border: 1px dashed #cbd5f5;
     }
+
     .char-writer {
-      width: 80px;
-      height: 80px;
-      border: 1px solid #ccc;
-      cursor: pointer;
+      width: clamp(70px, 18vw, 90px);
+      height: clamp(70px, 18vw, 90px);
+      border-radius: 12px;
+      border: 1px solid #dbeafe;
+      background: #fff;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    #pinyin, #meaning {
-      font-size: 20px;
-      margin: 5px 0;
+
+    .char-writer:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.45);
     }
+
     #draw-panel {
       position: relative;
-      width: 300px;
-      height: 300px;
-      margin: 10px auto;
-      border: 2px solid #333;
+      width: min(360px, 85vw);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      border-radius: 24px;
+      border: 2px solid #94a3b8;
       background: #fff;
+      overflow: hidden;
     }
-    #stroke-container {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 0;
-      pointer-events: none;
-    }
+
+    #stroke-container,
     #draw-canvas {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #draw-canvas {
       z-index: 1;
       touch-action: none;
     }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
     button {
-      margin: 5px;
-      padding: 8px 16px;
-      font-size: 14px;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 10px 25px -12px rgba(37, 99, 235, 0.7);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:active {
+      transform: scale(0.97);
+      box-shadow: 0 6px 15px -8px rgba(37, 99, 235, 0.7);
+    }
+
+    button:nth-child(2) {
+      background: #475569;
+    }
+    button:nth-child(3) {
+      background: #dc2626;
+    }
+
+    @media (max-width: 600px) {
+      .app-shell {
+        border-radius: 14px;
+        padding: 18px;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .info-panel {
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="app-shell">
+    <h1>Chinese Character Writing Practice</h1>
 
-  <h1>Chinese Character Writing Practice</h1>
-  <div id="writer-container"></div>
-  <div id="pinyin"></div>
-  <div id="meaning"></div>
+    <div id="writer-container"></div>
 
-  <div id="draw-panel">
-    <div id="stroke-container"></div>
-    <canvas id="draw-canvas" width="300" height="300"></canvas>
+    <div class="info-panel">
+      <div id="pinyin"></div>
+      <div id="meaning"></div>
+    </div>
+
+    <div id="draw-panel">
+      <div id="stroke-container"></div>
+      <canvas id="draw-canvas" width="300" height="300"></canvas>
+    </div>
+
+    <div class="controls">
+      <button onclick="playAllSmall()">Animate All Small</button>
+      <button onclick="replayPanel()">Replay Panel</button>
+      <button onclick="clearPanel()">Clear Panel</button>
+    </div>
   </div>
 
-  <button onclick="playAllSmall()">Animate All Small</button>
-  <button onclick="replayPanel()">Replay Panel</button>
-  <button onclick="clearPanel()">Clear Panel</button>
-
   <script>
-  // 1) Master list (includes single chars and phrases)
-  const defaultCharacters = [
-    { char: '我们是光', pinyin: 'wǒ men shì guāng', meaning: 'we are light' },
-    { char: '你好',      pinyin: 'nǐ hǎo',           meaning: 'how do you do' },
-    { char: '你',        pinyin: 'nǐ',               meaning: 'you' },
-    { char: '好',        pinyin: 'hǎo',              meaning: 'good' },
-    { char: '学',        pinyin: 'xué',              meaning: 'to study' },
-    { char: '习',        pinyin: 'xí',               meaning: 'to practice' },
-    { char: '汉',        pinyin: 'hàn',              meaning: 'Han (Chinese)' },
-    { char: '字',        pinyin: 'zì',               meaning: 'character' },
-    { char: '谢',        pinyin: 'xiè',              meaning: 'thank' },
-    { char: '我',        pinyin: 'wǒ',               meaning: 'I/me' },
-    { char: '们',        pinyin: 'men',              meaning: 'plural marker' },
-    { char: '是',        pinyin: 'shì',              meaning: 'to be' }
-  ];
+    const defaultCharacters = [
+      { char: '我们是光', pinyin: 'wǒ men shì guāng', meaning: 'we are light' },
+      { char: '你好',      pinyin: 'nǐ hǎo',           meaning: 'how do you do' },
+      { char: '你',        pinyin: 'nǐ',               meaning: 'you' },
+      { char: '好',        pinyin: 'hǎo',              meaning: 'good' },
+      { char: '学',        pinyin: 'xué',              meaning: 'to study' },
+      { char: '习',        pinyin: 'xí',               meaning: 'to practice' },
+      { char: '汉',        pinyin: 'hàn',              meaning: 'Han (Chinese)' },
+      { char: '字',        pinyin: 'zì',               meaning: 'character' },
+      { char: '谢',        pinyin: 'xiè',              meaning: 'thank' },
+      { char: '我',        pinyin: 'wǒ',               meaning: 'I/me' },
+      { char: '们',        pinyin: 'men',              meaning: 'plural marker' },
+      { char: '是',        pinyin: 'shì',              meaning: 'to be' }
+    ];
 
-  // 2) Optional URL override (?chars=好)
-  const params   = new URLSearchParams(window.location.search);
-  const override = params.get('chars');
-  // Show either the override single char or the first default phrase
-  const rootData  = override
-    ? { char: override, pinyin: '', meaning: '' }
-    : defaultCharacters[0];
+    const params   = new URLSearchParams(window.location.search);
+    const override = params.get('chars');
+    const rootData  = override
+      ? { char: override, pinyin: '', meaning: '' }
+      : defaultCharacters[0];
 
-  let smallWriters = [];
-  let panelWriter  = null;
+    let smallWriters = [];
+    let panelWriter  = null;
 
-  // Build the small‐character boxes + attach click handlers
-  function loadSmallBoxes(data) {
-    smallWriters = [];
-    const cont = document.getElementById('writer-container');
-    cont.innerHTML = '';
-    Array.from(data.char).forEach((ch,i) => {
-      const box = document.createElement('div');
-      box.id        = `small-${i}`;
-      box.className = 'char-writer';
-      cont.appendChild(box);
+    function loadSmallBoxes(data) {
+      smallWriters = [];
+      const cont = document.getElementById('writer-container');
+      cont.innerHTML = '';
+      Array.from(data.char).forEach((ch,i) => {
+        const box = document.createElement('div');
+        box.id        = `small-${i}`;
+        box.className = 'char-writer';
+        cont.appendChild(box);
 
-      // mini HanziWriter
-      const w = HanziWriter.create(box.id, ch, {
-        width: 80, height: 80, padding: 5,
-        showCharacter: true, showOutline: true,
-        strokeAnimationSpeed: 1, delayBetweenStrokes: 100
+        const w = HanziWriter.create(box.id, ch, {
+          width: 80, height: 80, padding: 5,
+          showCharacter: true, showOutline: true,
+          strokeAnimationSpeed: 1, delayBetweenStrokes: 100
+        });
+
+        box.addEventListener('click',()=>playInPanel(ch));
+
+        smallWriters.push(w);
       });
 
-      // click → play in big panel & update pinyin/meaning
-      box.addEventListener('click',()=>playInPanel(ch));
-
-      smallWriters.push(w);
-    });
-
-    // show phrase pinyin & meaning
-    document.getElementById('pinyin').textContent = 
-      data.pinyin ? `Pinyin: ${data.pinyin}` : '';
-    document.getElementById('meaning').textContent = 
-      data.meaning ? `Meaning: ${data.meaning}` : '';
-  }
-
-  // Animate all small boxes
-  function playAllSmall() {
-    smallWriters.forEach(w=>w.animateCharacter());
-  }
-
-  // Animate one character in the big panel
-  function playInPanel(ch) {
-    clearPanel();
-
-    // find if we have pinyin/meaning in our big list
-    const info = defaultCharacters.find(e=>e.char===ch);
-    if(info) {
-      document.getElementById('pinyin').textContent = `Pinyin: ${info.pinyin}`;
-      document.getElementById('meaning').textContent = `Meaning: ${info.meaning}`;
+      document.getElementById('pinyin').textContent = 
+        data.pinyin ? `Pinyin: ${data.pinyin}` : '';
+      document.getElementById('meaning').textContent = 
+        data.meaning ? `Meaning: ${data.meaning}` : '';
     }
 
-    panelWriter = HanziWriter.create('stroke-container', ch, {
-      width: 300, height: 300, padding: 20,
-      showCharacter: false, showOutline: true,
-      strokeColor: '#aaa',
-      strokeAnimationSpeed: 2,
-      delayBetweenStrokes: 300
-    });
-    panelWriter.animateCharacter();
-  }
+    function playAllSmall() {
+      smallWriters.forEach(w=>w.animateCharacter());
+    }
 
-  // Replay the panel animation
-  function replayPanel() {
-    if(panelWriter) panelWriter.animateCharacter();
-  }
+    function playInPanel(ch) {
+      clearPanel();
 
-  // Clear both stroke‐layer and drawing‐layer
-  function clearPanel() {
-    document.getElementById('stroke-container').innerHTML = '';
-    panelWriter = null;
-    drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
-    drawCtx.beginPath();
-  }
+      const info = defaultCharacters.find(e=>e.char===ch);
+      if(info) {
+        document.getElementById('pinyin').textContent = `Pinyin: ${info.pinyin}`;
+        document.getElementById('meaning').textContent = `Meaning: ${info.meaning}`;
+      }
 
-  // -------------------------------------------------------------------
-  // Free‐hand drawing on top canvas
-  const drawCanvas = document.getElementById('draw-canvas');
-  const drawCtx    = drawCanvas.getContext('2d');
-  let drawing      = false;
+      panelWriter = HanziWriter.create('stroke-container', ch, {
+        width: 300, height: 300, padding: 20,
+        showCharacter: false, showOutline: true,
+        strokeColor: '#aaa',
+        strokeAnimationSpeed: 2,
+        delayBetweenStrokes: 300
+      });
+      panelWriter.animateCharacter();
+    }
 
-  function down(e) {
-    e.preventDefault(); drawing = true;
-    const r = drawCanvas.getBoundingClientRect();
-    const x = ((e.touches? e.touches[0].clientX : e.clientX) - r.left);
-    const y = ((e.touches? e.touches[0].clientY : e.clientY) - r.top);
-    drawCtx.beginPath();
-    drawCtx.moveTo(x,y);
-  }
-  function move(e) {
-    if(!drawing) return;
-    const r = drawCanvas.getBoundingClientRect();
-    const x = ((e.touches? e.touches[0].clientX : e.clientX) - r.left);
-    const y = ((e.touches? e.touches[0].clientY : e.clientY) - r.top);
-    drawCtx.lineTo(x,y);
-    drawCtx.strokeStyle = '#000';
-    drawCtx.lineWidth   = 3;
-    drawCtx.lineCap     = 'round';
-    drawCtx.stroke();
-    drawCtx.beginPath();
-    drawCtx.moveTo(x,y);
-  }
-  function up() {
-    drawing = false;
-  }
+    function replayPanel() {
+      if(panelWriter) panelWriter.animateCharacter();
+    }
 
-  ['mousedown','touchstart'].forEach(evt=>
-    drawCanvas.addEventListener(evt, down));
-  ['mousemove','touchmove'].forEach(evt=>
-    drawCanvas.addEventListener(evt, move));
-  ['mouseup','mouseout','touchend','touchcancel'].forEach(evt=>
-    drawCanvas.addEventListener(evt, up));
+    function clearPanel() {
+      document.getElementById('stroke-container').innerHTML = '';
+      panelWriter = null;
+      drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+      drawCtx.beginPath();
+    }
 
-  // -------------------------------------------------------------------
-  // Init
-  loadSmallBoxes(rootData);
+    const drawCanvas = document.getElementById('draw-canvas');
+    const drawCtx    = drawCanvas.getContext('2d');
+    let drawing      = false;
+
+    function down(e) {
+      e.preventDefault(); drawing = true;
+      const r = drawCanvas.getBoundingClientRect();
+      const x = ((e.touches? e.touches[0].clientX : e.clientX) - r.left);
+      const y = ((e.touches? e.touches[0].clientY : e.clientY) - r.top);
+      drawCtx.beginPath();
+      drawCtx.moveTo(x,y);
+    }
+    function move(e) {
+      if(!drawing) return;
+      const r = drawCanvas.getBoundingClientRect();
+      const x = ((e.touches? e.touches[0].clientX : e.clientX) - r.left);
+      const y = ((e.touches? e.touches[0].clientY : e.clientY) - r.top);
+      drawCtx.lineTo(x,y);
+      drawCtx.strokeStyle = '#000';
+      drawCtx.lineWidth   = 3;
+      drawCtx.lineCap     = 'round';
+      drawCtx.stroke();
+      drawCtx.beginPath();
+      drawCtx.moveTo(x,y);
+    }
+    function up() {
+      drawing = false;
+    }
+
+    ['mousedown','touchstart'].forEach(evt=>
+      drawCanvas.addEventListener(evt, down));
+    ['mousemove','touchmove'].forEach(evt=>
+      drawCanvas.addEventListener(evt, move));
+    ['mouseup','mouseout','touchend','touchcancel'].forEach(evt=>
+      drawCanvas.addEventListener(evt, up));
+
+    loadSmallBoxes(rootData);
   </script>
-
 </body>
 </html>
