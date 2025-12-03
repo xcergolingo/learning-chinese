@@ -99,6 +99,30 @@
       align-items: center;
     }
 
+    #show-pinyin-btn {
+      background: #0ea5e9;
+      width: fit-content;
+      padding: 7px 18px;
+      box-shadow: none;
+      display: none;
+    }
+
+    #single-audio-btn {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: none;
+      background: #14b8a6;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    #single-audio-btn.loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
     #writer-container {
       display: flex;
       justify-content: center;
@@ -167,19 +191,10 @@
 
     button:active {
       transform: scale(0.97);
-      box-shadow: 0 6px 12px -8px rgba(37, 99, 235, 0.7);
     }
 
     .controls button:nth-child(2) { background: #475569; }
     .controls button:nth-child(3) { background: #dc2626; }
-
-    #show-pinyin-btn {
-      background: #0ea5e9;
-      width: fit-content;
-      padding: 7px 18px;
-      box-shadow: none;
-      display: none;
-    }
 
     @media (max-width: 480px) {
       .app-shell { border-radius: 14px; padding: 14px; gap: 14px; }
@@ -192,10 +207,7 @@
         border-radius: 5px;
       }
       .controls { grid-template-columns: 1fr; }
-      #audio-btn {
-        width: 38px;
-        height: 38px;
-      }
+      #audio-btn { width: 38px; height: 38px; }
     }
   </style>
 </head>
@@ -215,6 +227,10 @@
       <div id="meaning"></div>
       <div id="pinyin"></div>
       <button id="show-pinyin-btn" onclick="togglePinyin()">Show Pinyin</button>
+      <button id="single-audio-btn" onclick="playSingleCharAudio()" aria-label="Play character audio">
+        <span class="sr-only">Play character audio</span>
+        <span class="icon" aria-hidden="true">🔊</span>
+      </button>
     </div>
 
     <div id="draw-panel">
@@ -259,19 +275,34 @@
     let currentPinyinText = '';
     let pinyinVisible = false;
     let activeMeta = { ...rootData };
+    let currentSingleChar = '';
 
     const AUDIO_API_URL = 'https://rnmyudlgil.execute-api.us-east-1.amazonaws.com/prod/batch';
+
     const audioBtn = document.getElementById('audio-btn');
     const audioIcon = audioBtn.querySelector('.icon');
     const audioSr   = audioBtn.querySelector('.sr-only');
     const audioEl   = new Audio();
     audioEl.preload = 'none';
 
+    const singleAudioBtn  = document.getElementById('single-audio-btn');
+    const singleAudioIcon = singleAudioBtn.querySelector('.icon');
+    const singleAudioSr   = singleAudioBtn.querySelector('.sr-only');
+    const singleAudioEl   = new Audio();
+    singleAudioEl.preload = 'none';
+
     audioEl.addEventListener('ended', () => setAudioButtonReady());
     audioEl.addEventListener('error', () => {
       console.error('Audio playback error.');
       setAudioButtonRetry();
       alert('Unable to finish playing the audio.');
+    });
+
+    singleAudioEl.addEventListener('ended', () => setSingleAudioButtonReady());
+    singleAudioEl.addEventListener('error', () => {
+      console.error('Single-character audio error.');
+      setSingleAudioButtonRetry();
+      alert('Unable to finish playing this character audio.');
     });
 
     function updateAudioButton({ disabled, loading, icon, srText }) {
@@ -317,33 +348,105 @@
       });
     }
 
+    function hideSingleAudioButton() {
+      singleAudioBtn.style.display = 'none';
+      singleAudioBtn.disabled = true;
+      singleAudioBtn.classList.remove('loading');
+      singleAudioIcon.textContent = '🔊';
+      singleAudioSr.textContent = 'Play character audio';
+      currentSingleChar = '';
+      singleAudioEl.pause();
+      singleAudioEl.currentTime = 0;
+    }
+
+    function setSingleAudioButtonReady() {
+      if (!currentSingleChar) {
+        hideSingleAudioButton();
+        return;
+      }
+      singleAudioBtn.style.display = 'inline-flex';
+      singleAudioBtn.disabled = false;
+      singleAudioBtn.classList.remove('loading');
+      singleAudioIcon.textContent = '🔊';
+      singleAudioSr.textContent = `Play audio for ${currentSingleChar}`;
+    }
+
+    function setSingleAudioButtonBusy() {
+      singleAudioBtn.disabled = true;
+      singleAudioBtn.classList.add('loading');
+      singleAudioIcon.textContent = '⏳';
+      singleAudioSr.textContent = `Loading audio for ${currentSingleChar}`;
+    }
+
+    function setSingleAudioButtonPlaying() {
+      singleAudioBtn.disabled = true;
+      singleAudioBtn.classList.remove('loading');
+      singleAudioIcon.textContent = '🎧';
+      singleAudioSr.textContent = `Playing audio for ${currentSingleChar}`;
+    }
+
+    function setSingleAudioButtonRetry() {
+      if (!currentSingleChar) return;
+      singleAudioBtn.disabled = false;
+      singleAudioBtn.classList.remove('loading');
+      singleAudioIcon.textContent = '↻';
+      singleAudioSr.textContent = `Retry audio for ${currentSingleChar}`;
+    }
+
+    async function requestAudioUrl(text) {
+      const response = await fetch(AUDIO_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts: [text], lang: 'zh-CN' })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const url = data?.results?.[0]?.url;
+      if (!url) {
+        throw new Error('Missing audio URL');
+      }
+      return url;
+    }
+
+    async function playAudioSource(audioRef, url) {
+      audioRef.src = url;
+      const promise = audioRef.play();
+      if (promise !== undefined) {
+        await promise;
+      }
+    }
+
     async function playAudio() {
       if (!activeMeta?.char || audioBtn.disabled) return;
 
       setAudioButtonBusy();
       try {
-        const response = await fetch(AUDIO_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ texts: [activeMeta.char], lang: 'zh-CN' })
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const url = data?.results?.[0]?.url;
-        if (!url) throw new Error('Missing audio URL');
-
-        audioEl.src = url;
-        const playPromise = audioEl.play();
-        if (playPromise !== undefined) await playPromise;
+        const url = await requestAudioUrl(activeMeta.char);
+        await playAudioSource(audioEl, url);
         setAudioButtonPlaying();
       } catch (err) {
         console.error('Audio request failed:', err);
         setAudioButtonRetry();
         alert('Unable to play audio right now. Please try again.');
+      }
+    }
+
+    async function playSingleCharAudio() {
+      if (!currentSingleChar || singleAudioBtn.disabled) return;
+
+      setSingleAudioButtonBusy();
+      try {
+        const url = await requestAudioUrl(currentSingleChar);
+        await playAudioSource(singleAudioEl, url);
+        setSingleAudioButtonPlaying();
+      } catch (err) {
+        console.error('Single-character audio request failed:', err);
+        setSingleAudioButtonRetry();
+        alert('Unable to play this character right now. Please try again.');
       }
     }
 
@@ -384,6 +487,7 @@
     function loadSmallBoxes(data) {
       activeMeta = { ...data };
       setAudioButtonReady();
+      hideSingleAudioButton();
 
       smallWriters = [];
       const cont = document.getElementById('writer-container');
@@ -416,7 +520,11 @@
     }
 
     function playInPanel(ch) {
-      clearPanel();
+      clearPanel(false);
+      singleAudioEl.pause();
+      singleAudioEl.currentTime = 0;
+      currentSingleChar = ch;
+      setSingleAudioButtonReady();
 
       const info = defaultCharacters.find(e=>e.char===ch);
       const meta = info ? info : activeMeta;
@@ -445,11 +553,15 @@
       if(panelWriter) panelWriter.animateCharacter();
     }
 
-    function clearPanel() {
+    function clearPanel(resetAudioBtn = true) {
       document.getElementById('stroke-container').innerHTML = '';
       panelWriter = null;
       drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
       drawCtx.beginPath();
+      hideSingleAudioButton();
+      if (resetAudioBtn) {
+        setAudioButtonReady();
+      }
     }
 
     const drawCanvas = document.getElementById('draw-canvas');
