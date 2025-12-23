@@ -209,6 +209,39 @@
       .controls { grid-template-columns: 1fr; }
       #audio-btn { width: 38px; height: 38px; }
     }
+    
+    .check-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    }
+
+    #input-text {
+    width: min(280px, 90%);
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 1rem;
+    text-align: center;
+    outline: none;
+    }
+
+    #input-text:focus {
+    border-color: var(--accent);
+    }
+
+    #check-btn {
+    background: #16a34a;
+    }
+
+    #check-result {
+    min-height: 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    }
+    
   </style>
 </head>
 <body>
@@ -238,6 +271,17 @@
       <canvas id="draw-canvas"></canvas>
     </div>
 
+    <div class="check-panel">
+      <input
+	id="input-text"
+	type="text"
+	placeholder="practice type the characters here"
+	autocomplete="off"
+	/>
+      <button id="check-btn" onclick="checkInput()">Check</button>
+      <div id="check-result"></div>
+    </div>
+    
     <div class="controls">
       <button onclick="playAllSmall()">Animate All Small</button>
       <button onclick="replayPanel()">Replay Panel</button>
@@ -246,6 +290,30 @@
   </div>
 
   <script>
+
+    function checkInput() {
+	const input = document.getElementById('input-text');
+	const result = document.getElementById('check-result');
+	
+	const typed = input.value.trim();
+	const correct = activeMeta?.char?.trim();
+	
+	if (!typed) {
+	    result.textContent = 'Please type the words above.';
+	    result.style.color = '#475569';
+	    return;
+	}
+	
+	if (typed === correct) {
+	    result.textContent = '✅ Correct!';
+	    result.style.color = '#16a34a';
+	} else {
+	    result.textContent = '❌ Not quite, please try it again! ';
+	    result.style.color = '#dc2626';
+	}
+    }
+    
+    
     const defaultCharacters = [
       { char: '我们是光', pinyin: 'wǒ men shì guāng', meaning: 'we are light' },
       { char: '你好',      pinyin: 'nǐ hǎo',           meaning: 'how do you do' },
