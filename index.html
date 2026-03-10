@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chinese Character Writing Practice</title>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@2.2.2/dist/hanzi-writer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       color-scheme: light dark;
@@ -196,6 +197,243 @@
     .controls button:nth-child(2) { background: #475569; }
     .controls button:nth-child(3) { background: #dc2626; }
 
+    .language-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8f4f8 100%);
+      border-radius: 12px;
+      border: 1px solid #c7d2fe;
+    }
+
+    .lang-select {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .lang-select label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .lang-select select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      min-width: 140px;
+    }
+
+    .lang-select select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .lang-arrow {
+      font-size: 1.4rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .translation-panel {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 14px;
+      padding: 14px 18px;
+      border: 1px solid #fbbf24;
+    }
+
+    .translation-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .translation-header span {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #92400e;
+    }
+
+    #translate-btn {
+      background: #f59e0b;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      box-shadow: 0 4px 12px -4px rgba(245, 158, 11, 0.5);
+    }
+
+    #translate-btn:hover {
+      background: #d97706;
+    }
+
+    #translate-btn.loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .translation-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .translation-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .translation-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #78350f;
+      min-width: 65px;
+      flex-shrink: 0;
+    }
+
+    .translation-text {
+      font-size: 0.95rem;
+      color: #451a03;
+      word-break: break-word;
+    }
+
+    /* Scan button styles */
+    #scan-btn {
+      background: #8b5cf6;
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    #scan-btn.loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    /* Hidden file input */
+    #scan-input {
+      display: none;
+    }
+
+    /* Scan modal */
+    .scan-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .scan-modal.active {
+      display: flex;
+    }
+
+    .scan-modal-content {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .scan-modal h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      text-align: center;
+      color: #1f1f1f;
+    }
+
+    .scan-preview {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .scan-preview.has-image {
+      display: block;
+    }
+
+    .scan-result {
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 60px;
+      font-size: 1.1rem;
+      text-align: center;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .scan-result.loading {
+      color: var(--muted);
+    }
+
+    .scan-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .scan-actions button {
+      flex: 1;
+    }
+
+    #scan-use-btn {
+      background: #16a34a;
+    }
+
+    #scan-cancel-btn {
+      background: #6b7280;
+    }
+
+    #scan-retake-btn {
+      background: #f59e0b;
+    }
+
+    .scan-progress {
+      background: #e2e8f0;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .scan-progress.active {
+      display: block;
+    }
+
+    .scan-progress-bar {
+      background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
     @media (max-width: 480px) {
       .app-shell { border-radius: 14px; padding: 14px; gap: 14px; }
       .info-panel { font-size: 0.9rem; min-height: 32px; }
@@ -208,6 +446,12 @@
       }
       .controls { grid-template-columns: 1fr; }
       #audio-btn { width: 38px; height: 38px; }
+      #scan-btn { width: 38px; height: 38px; }
+      .language-row { gap: 8px; padding: 8px 10px; }
+      .lang-select select { min-width: 120px; font-size: 0.85rem; }
+      .lang-arrow { font-size: 1.1rem; }
+      .translation-panel { padding: 12px 14px; }
+      .scan-modal-content { padding: 18px; }
     }
     
     .check-panel {
@@ -248,12 +492,86 @@
   <div class="app-shell">
     <h1>Chinese Character Writing Practice</h1>
 
+    <div class="language-row">
+      <div class="lang-select">
+        <label for="native-lang">I speak:</label>
+        <select id="native-lang">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="vi">Vietnamese</option>
+          <option value="th">Thai</option>
+          <option value="it">Italian</option>
+          <option value="nl">Dutch</option>
+          <option value="pl">Polish</option>
+          <option value="tr">Turkish</option>
+          <option value="uk">Ukrainian</option>
+          <option value="id">Indonesian</option>
+        </select>
+      </div>
+      <span class="lang-arrow">→</span>
+      <div class="lang-select">
+        <label for="target-lang">Learning:</label>
+        <select id="target-lang">
+          <option value="zh-Hans">Chinese (Simplified)</option>
+          <option value="zh-Hant">Chinese (Traditional)</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="vi">Vietnamese</option>
+          <option value="th">Thai</option>
+          <option value="nl">Dutch</option>
+          <option value="pl">Polish</option>
+          <option value="tr">Turkish</option>
+          <option value="uk">Ukrainian</option>
+          <option value="id">Indonesian</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+
     <div class="top-row">
       <button id="audio-btn" onclick="playAudio()" aria-label="Play pronunciation">
         <span class="sr-only">Play audio</span>
         <span class="icon" aria-hidden="true">🔊</span>
       </button>
+      <button id="scan-btn" onclick="openScanModal()" aria-label="Scan text from photo">
+        <span class="sr-only">Scan photo</span>
+        <span class="icon" aria-hidden="true">📷</span>
+      </button>
+      <input type="file" id="scan-input" accept="image/*" capture="environment" onchange="handleScanFile(event)" />
       <div id="writer-container"></div>
+    </div>
+
+    <!-- Scan Modal -->
+    <div id="scan-modal" class="scan-modal" onclick="closeScanModalOnBackdrop(event)">
+      <div class="scan-modal-content" onclick="event.stopPropagation()">
+        <h2>📷 Scan Chinese Text</h2>
+        <img id="scan-preview" class="scan-preview" alt="Preview" />
+        <div class="scan-progress" id="scan-progress">
+          <div class="scan-progress-bar" id="scan-progress-bar"></div>
+        </div>
+        <div id="scan-result" class="scan-result">Tap below to take a photo or choose an image</div>
+        <div class="scan-actions">
+          <button id="scan-retake-btn" onclick="triggerScanInput()">📷 Take Photo</button>
+          <button id="scan-use-btn" onclick="useScanResult()" disabled>Use Text</button>
+          <button id="scan-cancel-btn" onclick="closeScanModal()">Cancel</button>
+        </div>
+      </div>
     </div>
 
     <div class="info-panel">
@@ -264,6 +582,23 @@
         <span class="sr-only">Play character audio</span>
         <span class="icon" aria-hidden="true">🔊</span>
       </button>
+    </div>
+
+    <div class="translation-panel">
+      <div class="translation-header">
+        <span>🍎 Apple Translation</span>
+        <button id="translate-btn" onclick="translateContent()">Translate</button>
+      </div>
+      <div class="translation-content">
+        <div class="translation-row">
+          <span class="translation-label">Word:</span>
+          <span id="word-translation" class="translation-text">—</span>
+        </div>
+        <div class="translation-row">
+          <span class="translation-label">Sentence:</span>
+          <span id="sentence-translation" class="translation-text">—</span>
+        </div>
+      </div>
     </div>
 
     <div id="draw-panel">
@@ -670,6 +1005,256 @@
 
     syncCanvasToPanel();
     loadSmallBoxes(rootData);
+
+    // Apple Translation using LibreTranslate API (free & open source)
+    const LIBRE_TRANSLATE_API = 'https://libretranslate.com/translate';
+    
+    // Language code mapping for LibreTranslate
+    const langCodeMap = {
+      'zh-Hans': 'zh',
+      'zh-Hant': 'zt',
+      'en': 'en',
+      'es': 'es',
+      'fr': 'fr',
+      'de': 'de',
+      'ja': 'ja',
+      'ko': 'ko',
+      'pt': 'pt',
+      'ru': 'ru',
+      'ar': 'ar',
+      'hi': 'hi',
+      'vi': 'vi',
+      'th': 'th',
+      'it': 'it',
+      'nl': 'nl',
+      'pl': 'pl',
+      'tr': 'tr',
+      'uk': 'uk',
+      'id': 'id'
+    };
+
+    async function translateText(text, sourceLang, targetLang) {
+      const source = langCodeMap[sourceLang] || sourceLang;
+      const target = langCodeMap[targetLang] || targetLang;
+      
+      try {
+        const response = await fetch(LIBRE_TRANSLATE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            q: text,
+            source: source,
+            target: target,
+            format: 'text'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Translation failed: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.translatedText || text;
+      } catch (err) {
+        console.error('Translation error:', err);
+        // Fallback: try MyMemory API
+        return await translateWithMyMemory(text, source, target);
+      }
+    }
+
+    async function translateWithMyMemory(text, sourceLang, targetLang) {
+      try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.responseStatus === 200 && data.responseData?.translatedText) {
+          return data.responseData.translatedText;
+        }
+        throw new Error('MyMemory translation failed');
+      } catch (err) {
+        console.error('MyMemory error:', err);
+        return `[Translation unavailable]`;
+      }
+    }
+
+    async function translateContent() {
+      const translateBtn = document.getElementById('translate-btn');
+      const wordEl = document.getElementById('word-translation');
+      const sentenceEl = document.getElementById('sentence-translation');
+      
+      if (!activeMeta?.char) {
+        wordEl.textContent = '—';
+        sentenceEl.textContent = '—';
+        return;
+      }
+      
+      const nativeLang = document.getElementById('native-lang').value;
+      const targetLang = document.getElementById('target-lang').value;
+      
+      // Disable button while loading
+      translateBtn.disabled = true;
+      translateBtn.classList.add('loading');
+      translateBtn.textContent = 'Translating...';
+      
+      wordEl.textContent = '⏳ Loading...';
+      sentenceEl.textContent = '⏳ Loading...';
+      
+      try {
+        // Translate word (from target → native, so user sees meaning in their language)
+        const wordTranslation = await translateText(activeMeta.char, targetLang, nativeLang);
+        wordEl.textContent = wordTranslation;
+        
+        // Build a sample sentence if meaning exists
+        let sampleSentence = activeMeta.meaning || activeMeta.char;
+        
+        // Translate the sentence/meaning to target language (native → target)
+        // This shows how to say the meaning in the target language
+        const sentenceTranslation = await translateText(sampleSentence, 'en', targetLang);
+        
+        // Show both: original in target + meaning in native
+        if (activeMeta.meaning) {
+          sentenceEl.innerHTML = `<strong>${activeMeta.char}</strong> = "${activeMeta.meaning}"`;
+        } else {
+          sentenceEl.textContent = sentenceTranslation;
+        }
+        
+      } catch (err) {
+        console.error('Translation failed:', err);
+        wordEl.textContent = '[Error]';
+        sentenceEl.textContent = '[Error]';
+      } finally {
+        translateBtn.disabled = false;
+        translateBtn.classList.remove('loading');
+        translateBtn.textContent = 'Translate';
+      }
+    }
+
+    // Auto-translate when language changes
+    document.getElementById('native-lang').addEventListener('change', () => {
+      if (activeMeta?.char) translateContent();
+    });
+    
+    document.getElementById('target-lang').addEventListener('change', () => {
+      if (activeMeta?.char) translateContent();
+    });
+
+    // Initial translation
+    translateContent();
+
+    // ===== Photo Scanning (OCR) =====
+    let scannedText = '';
+    let ocrWorker = null;
+
+    function openScanModal() {
+      document.getElementById('scan-modal').classList.add('active');
+      document.getElementById('scan-result').textContent = 'Tap below to take a photo or choose an image';
+      document.getElementById('scan-result').classList.remove('loading');
+      document.getElementById('scan-preview').classList.remove('has-image');
+      document.getElementById('scan-use-btn').disabled = true;
+      document.getElementById('scan-progress').classList.remove('active');
+      document.getElementById('scan-progress-bar').style.width = '0%';
+      scannedText = '';
+    }
+
+    function closeScanModal() {
+      document.getElementById('scan-modal').classList.remove('active');
+    }
+
+    function closeScanModalOnBackdrop(event) {
+      if (event.target.id === 'scan-modal') {
+        closeScanModal();
+      }
+    }
+
+    function triggerScanInput() {
+      document.getElementById('scan-input').click();
+    }
+
+    async function handleScanFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Show preview
+      const preview = document.getElementById('scan-preview');
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.classList.add('has-image');
+      };
+      reader.readAsDataURL(file);
+
+      // Run OCR
+      const resultEl = document.getElementById('scan-result');
+      const progressEl = document.getElementById('scan-progress');
+      const progressBar = document.getElementById('scan-progress-bar');
+      const useBtn = document.getElementById('scan-use-btn');
+
+      resultEl.textContent = '🔍 Scanning for Chinese text...';
+      resultEl.classList.add('loading');
+      progressEl.classList.add('active');
+      progressBar.style.width = '0%';
+      useBtn.disabled = true;
+
+      try {
+        // Use Tesseract.js for OCR
+        const result = await Tesseract.recognize(
+          file,
+          'chi_sim+chi_tra', // Simplified + Traditional Chinese
+          {
+            logger: (m) => {
+              if (m.status === 'recognizing text') {
+                progressBar.style.width = `${Math.round(m.progress * 100)}%`;
+              }
+            }
+          }
+        );
+
+        const rawText = result.data.text;
+        
+        // Extract only Chinese characters (including punctuation)
+        const chineseOnly = rawText.match(/[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]+/g);
+        
+        if (chineseOnly && chineseOnly.length > 0) {
+          scannedText = chineseOnly.join('');
+          resultEl.textContent = scannedText;
+          resultEl.classList.remove('loading');
+          useBtn.disabled = false;
+        } else {
+          resultEl.textContent = '❌ No Chinese text found. Try again with clearer text.';
+          resultEl.classList.remove('loading');
+          scannedText = '';
+        }
+      } catch (err) {
+        console.error('OCR error:', err);
+        resultEl.textContent = '❌ Scanning failed. Please try again.';
+        resultEl.classList.remove('loading');
+        scannedText = '';
+      }
+
+      progressEl.classList.remove('active');
+      // Reset file input so the same file can be selected again
+      event.target.value = '';
+    }
+
+    function useScanResult() {
+      if (!scannedText) return;
+
+      // Load the scanned text as a new word/sentence
+      loadSmallBoxes({
+        char: scannedText,
+        pinyin: '',
+        meaning: ''
+      });
+
+      // Clear the input field
+      document.getElementById('input-text').value = '';
+      document.getElementById('check-result').textContent = '';
+
+      // Close modal and auto-translate
+      closeScanModal();
+      translateContent();
+    }
   </script>
 </body>
 </html>
